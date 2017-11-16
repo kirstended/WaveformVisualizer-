@@ -1,4 +1,3 @@
-// This is a test line
 #include "ofApp.h"
 
 
@@ -78,39 +77,21 @@ void ofApp::update(){
         volHistory.erase(volHistory.begin(), volHistory.begin()+1);
     }
    
-    //i dont get how to get the screen save to reload
-    if(ofGetSeconds()>20)
-    {   image.update();
-        image.getPixels();
+
+    
+    if (ofGetMousePressed()*1)
+    {
+        ofSetBackgroundColor(0);
+        ofSetBackgroundAuto(true);
     }
     
+
     
-//    ofPixels newPixels;
-//    int skipPixel = 1;
-//    if (grabber.isFrameNew())
-//    {
-//        // Do some work.
-//        grabberPixels = grabber.getPixels();
-//        for (int x = 0; x < grabberPixels.getWidth(); x = x + skipPixel) {
-//            for (int y = 0; y < grabberPixels.getHeight(); y = y + skipPixel) {
-//                // Modify each pixel at [x, y] based on waveform values.
-//                 grabberPixels.setColor(x, y, grabberPixels.getColor(x,y).getBrightness());
-//                }
-//
-//                // Update newPixels
-//            
-//        }
-//        
-
-//    grabberTexture.loadData(grabberPixels);
-//    newTexture.loadData(grabberPixels);
-//    }
-
     frequency = ofLerp(frequency, frequencyTarget, 0.4);
     
  
     if(ofGetKeyPressed()) {
-        volume= ofLerp(volume, 1, 0.8); // jump quickly to 1
+        volume= ofLerp(volume, 1, 0.3); // jump quickly to 1
     } else {
         volume= ofLerp(volume, 0, 0.1); // fade slowly to 0
     }
@@ -119,8 +100,10 @@ void ofApp::update(){
     updateWaveform(ofMap(ofGetMouseX(), 0, ofGetWidth(), 3, 150, true));
 }
 
-//    
-//    
+
+
+//
+//
 //    if(ofGetKeyPressed('l'))
 //    {
 //    
@@ -139,48 +122,96 @@ void ofApp::draw(){
     for (auto position: outLine)
     {
         if (position.x < grabber.getWidth())
-        {     }
-//
-            ofFill();
-
-                ofDrawCircle(20,20, scaledVol * 190.0f);
-        for (int i=0; i<ofGetWidth(); i++)
         {
-//            ofSetColor(grabber.getPixels().getColor(100));
-            ofSetColor(ofColor::white);
-            ofDrawLine(0+i,ofGetHeight(),0,ofGetHeight()-(4*(scaledVol*190.0f)));
-        }
-    
-            ofNoFill();
-        
+            float subsectionWidth = 4;
             
+            grabber.getTexture().drawSubsection((int)position.x,
+                                                position.y - ofGetHeight() / 2,
+                                                subsectionWidth,
+                                                grabber.getTexture().getHeight(),
+                                                (int)position.x,
+                                                0,
+                                                subsectionWidth,
+                                                grabber
+                                                .getTexture().getHeight()
+                                                );
+        }
+// Translating the waveform line
+        float lineVariable= ofMap(frequencyTarget,0,3000,5,50);
+        float colorVariable= ofRandom(0,ofMap(frequencyTarget,0,3000,0,255));
+        float hueVariable= ofMap(frequencyTarget,40,3000,0,255);
+        ofSetLineWidth(1);
+        ofSetColor(ofColor::fromHsb(hueVariable, colorVariable, 245));
+//    if (ofGetMouseX()>0)
+//    {
+//        
+//        ofPushMatrix();
+//        for (int a=0; a<20; a++)
+//        {
+//             ofDrawLine(ofGetWidth()-(int)position.x, ofGetHeight()+(int)position.y, (int)position.x*a, (int)position.y+scaledVol * 190.0f);
+//            ofDrawLine(ofGetWidth()-(int)position.x, -1*((int)position.y+ofGetHeight()), (int)position.x*a, (int)position.y+scaledVol * 190.0f);
+//        }
+//
+//        ofPopMatrix();
+        
+//    if (ofGetMouseX()> grabber.getWidth())
+//        {  ofPushMatrix();
+//            ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+//            grabberTexture.draw(0, 0);
+//            ofPopMatrix();
+//        }
+    }
         
     
     
-    //for variable frame color dependent on frequency
-    float lineVariable= ofMap(frequencyTarget,0,3000,5,50);
-    float colorVariable= ofRandom(40,ofMap(frequencyTarget,40,3000,30,255));
-    float hueVariable= ofMap(frequencyTarget,40,3000,0,255);
-    ofSetLineWidth(lineVariable);
-    ofSetColor(ofColor::fromHsb(hueVariable, colorVariable, 255));
-
-//    ofSetColor(ofColor::white);
     float value = 0.2;
     
     for (auto point: outLine)
     {
-        ofDrawCircle(point, 3);
+        ofDrawCircle(point, 6);
+        
+        
         
     }
+
+
+
     
     
-    if ('f')
-        {
-            image.draw(400, 460, 300, 200);
     
-        }
+    
+    
+    //for variable frame color dependent on frequency
     
 
+//    ofSetColor(ofColor::white);
+    
+    ofFill();
+    
+    ofDrawCircle(20,20, scaledVol * 190.0f);
+    
+//    for (int i=0; i<ofGetWidth(); i++)
+//    {
+//        //            ofSetColor(grabber.getPixels().getColor(100));
+////        ofSetColor(ofColor::white);
+//        ofDrawLine(0+i,ofGetHeight(),0,ofGetHeight()-(4*(scaledVol*190.0f)));
+//    }
+//    
+    
+    ofNoFill();
+
+//    float value = 0.2;
+//    
+//    for (auto point: outLine)
+//    {
+////        ofDrawCircle(point, 3);
+//        
+//        
+//    }
+    
+    
+//    if ('f')
+    
     
     //INPUT AUDIO CIRCLE
     
@@ -274,7 +305,7 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
             
             ySmooth = (1 - alpha) * ofMap(output[i], -1, 1, 0, ofGetHeight()) + (alpha) * ySmooth;
             
-            outLine.addVertex(ofMap(i, 0, bufferSize - 1, 0, ofGetWidth()),
+            outLine.addVertex(ofMap(i, 0, bufferSize-1 , 0, ofGetWidth()),
                               ySmooth);
             
         }
@@ -353,7 +384,12 @@ void ofApp::keyPressed(int key) {
         for(int a=0; a<40; a++)
         {   frequencyTarget= sin(phase)*a;
         }
+    }
+    else if (key=='l')
+        {
             
+            
+        }
     
     
  
@@ -362,4 +398,4 @@ void ofApp::keyPressed(int key) {
     }
     
 
-}
+
