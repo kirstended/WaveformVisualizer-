@@ -55,6 +55,7 @@ class ofApp : public ofBaseApp{
     glm::vec3 boundingSize;
     
     
+    ofSoundPlayer soundPlayer;
     ofVideoGrabber grabber;
     ofPixels grabberPixels;
     ofTexture grabberTexture;
@@ -68,7 +69,14 @@ class ofApp : public ofBaseApp{
     uint64_t time=0;
     ofTrueTypeFont frabk;
     
-    ofImage image; 
+    ofImage image;
+    
+    void	drawText();
+    void	typeKey(int key);
+    string	text;
+    int		position;
+    int		cursorx, cursory;
+    
     
      
     

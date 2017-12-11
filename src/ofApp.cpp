@@ -1,4 +1,3 @@
-// This is a test line
 #include "ofApp.h"
 
 
@@ -9,7 +8,7 @@ void ofApp::setup(){
     ofBackground(ofColor::black);
     
     // Setup the video player.
-    grabber.setup(600,440);
+    grabber.setup(ofGetWidth()/2,ofGetHeight()/2);
 
     boundingSize = {2000, 500, 1000};
 
@@ -40,6 +39,7 @@ void ofApp::setup(){
 
     
     ofSoundStreamSetup(1, 0); // mono output=1; stereo=2
+    soundPlayer.setMultiPlay(true);
     
     ofSoundStreamSettings settings;
 
@@ -59,11 +59,14 @@ void ofApp::setup(){
     
     image.load("bingo.jpg");
     
+    //This is for the text
+    text="";
+    position=0;
+    cursorx=0;
+    cursory=0;
+
  
 
-    
-//    frabk.load("frabk.tff", 14, true, true);
-//    frabk.setLineHeight(8);
 
 }
 
@@ -77,40 +80,13 @@ void ofApp::update(){
     if( volHistory.size() >= 400 ){
         volHistory.erase(volHistory.begin(), volHistory.begin()+1);
     }
-   
-    //i dont get how to get the screen save to reload
-    if(ofGetSeconds()>20)
-    {   image.update();
-        image.getPixels();
-    }
-    
-    
-//    ofPixels newPixels;
-//    int skipPixel = 1;
-//    if (grabber.isFrameNew())
-//    {
-//        // Do some work.
-//        grabberPixels = grabber.getPixels();
-//        for (int x = 0; x < grabberPixels.getWidth(); x = x + skipPixel) {
-//            for (int y = 0; y < grabberPixels.getHeight(); y = y + skipPixel) {
-//                // Modify each pixel at [x, y] based on waveform values.
-//                 grabberPixels.setColor(x, y, grabberPixels.getColor(x,y).getBrightness());
-//                }
-//
-//                // Update newPixels
-//            
-//        }
-//        
 
-//    grabberTexture.loadData(grabberPixels);
-//    newTexture.loadData(grabberPixels);
-//    }
-
+    
     frequency = ofLerp(frequency, frequencyTarget, 0.4);
     
  
     if(ofGetKeyPressed()) {
-        volume= ofLerp(volume, 1, 0.8); // jump quickly to 1
+        volume= ofLerp(volume, 1, 0.3); // jump quickly to 1
     } else {
         volume= ofLerp(volume, 0, 0.1); // fade slowly to 0
     }
@@ -119,12 +95,6 @@ void ofApp::update(){
     updateWaveform(ofMap(ofGetMouseX(), 0, ofGetWidth(), 3, 150, true));
 }
 
-//    
-//    
-//    if(ofGetKeyPressed('l'))
-//    {
-//    
-
     //for envelope generator; key is pressed affecting attack/decay
     //ofLerp= float start, float stop, and float amount;
    
@@ -132,77 +102,114 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    // Reset the color of grabber texture to original color.
+    //for bitmaptext
+    ofPushMatrix();
+    drawText();
+    ofPopMatrix();
+    
+        // Reset the color of grabber texture to original color.
     ofSetColor(ofColor::white);
- 
+    
+    ofDrawBitmapStringHighlight("Mouse Click= Initialize Sound", grabber.getWidth()+10,10);
+    ofDrawBitmapStringHighlight("Top row of keyboard letters= Play Sound Samples", grabber.getWidth()+10,30);
+    ofDrawBitmapStringHighlight("Spacebar=Stop Sample", grabber.getWidth()+10,50);
+    ofDrawBitmapStringHighlight("Bottom 2 rows of keyboard letters =MIDI NOTES", grabber.getWidth()+10,70);
+    ofDrawBitmapStringHighlight("Shift+Key= Sustain", grabber.getWidth()+10,90);
+    ofDrawBitmapStringHighlight("MouseMoved= Changes Frequency Bands", grabber.getWidth()+10,110);
+
+    
+//    QWERTYUIOP Keys= Play Sound Samples; Spacebar=Stop Sound Samples; ASDFGHJKLZXCVBNM=MIDI NOTES; Shift+KeyPress= Hold Note; MouseMoved=Changes Frequency Bands", grabber.getWidth()+10,10);
     
     for (auto position: outLine)
     {
         if (position.x < grabber.getWidth())
-        {     }
-//
-            ofFill();
-
-                ofDrawCircle(20,20, scaledVol * 190.0f);
-        for (int i=0; i<ofGetWidth(); i++)
         {
-//            ofSetColor(grabber.getPixels().getColor(100));
-            ofSetColor(ofColor::white);
-            ofDrawLine(0+i,ofGetHeight(),0,ofGetHeight()-(4*(scaledVol*190.0f)));
-        }
-    
-            ofNoFill();
-        
+            float subsectionWidth = 4;
             
+            grabber.getTexture().drawSubsection((int)position.x,
+                                                position.y - ofGetHeight() / 2,
+                                                subsectionWidth,
+                                                grabber.getTexture().getHeight(),
+                                                (int)position.x,
+                                                0,
+                                                subsectionWidth,
+                                                grabber
+                                                .getTexture().getHeight()
+                                                );
+        }
+// Translating the waveform line
+        float lineVariable= ofMap(frequencyTarget,0,3000,5,50);
+        float colorVariable= ofRandom(0,ofMap(frequencyTarget,0,3000,0,255));
+        float hueVariable= ofMap(frequencyTarget,40,3000,0,255);
+        ofSetLineWidth(1);
+        ofSetColor(ofColor::fromHsb(hueVariable, colorVariable, 245));
+        
+    if (ofGetKeyPressed())
+    {
+        for (int a=0; a<ofGetWidth(); a++)
+        {
+            ofDrawLine(1+(a*2), grabber.getHeight(), 1+ (a*2) , grabber.getHeight()-scaledVol * 500.0f);
+    }
         
     
-    
-    //for variable frame color dependent on frequency
-    float lineVariable= ofMap(frequencyTarget,0,3000,5,50);
-    float colorVariable= ofRandom(40,ofMap(frequencyTarget,40,3000,30,255));
-    float hueVariable= ofMap(frequencyTarget,40,3000,0,255);
-    ofSetLineWidth(lineVariable);
-    ofSetColor(ofColor::fromHsb(hueVariable, colorVariable, 255));
-
-//    ofSetColor(ofColor::white);
     float value = 0.2;
     
     for (auto point: outLine)
     {
-        ofDrawCircle(point, 3);
+        ofDrawCircle(point, 6);
         
     }
+
+    
+    }
+}
+//VOID FOR BITMAP___________________________________________________________
+}
+void ofApp::drawText() {
     
     
-    if ('f')
+    
+    float charWidth = 8.5;
+    float desiredLineWidth = ofGetWidth();
+    int numCharsPerLine = desiredLineWidth / charWidth;
+    float charHeight=10;
+    float desiredLineHeight= ofGetHeight()/2;
+    int numCharsLength= desiredLineHeight/charHeight;
+    std::string brokenText = "";
+    
+    
+    int numLines = 0;
+    
+    for (std::size_t i = 0; i < text.size(); i++)
+    {
+        if ((i % numCharsPerLine) == 0)
         {
-            image.draw(400, 460, 300, 200);
-    
+            brokenText += "\n";
+            numLines++;
         }
+        
+        if (text[i] == '\n')
+        {
+            numLines++;
+        }
+        
+        brokenText += text[i];
+        
+        if (numLines > 5)
+        {
+            text = "";
+            position = 0;
+        }
+    }
     
+  
 
-    
-    //INPUT AUDIO CIRCLE
-    
-    //lets draw the volume history as a graph
-//    ofBeginShape();
-//    for (unsigned int i = 0; i < volHistory.size(); i++){
-//        if( i == 0 ) ofVertex(i, 400);
-//        
-//        ofVertex(i, 400 - volHistory[i] * 70);
-//        
-//        if( i == volHistory.size() -1 ) ofVertex(i, 400);
-//    }
-//    ofEndShape(false);
-    
+    float colorVariable= ofRandom(0,ofMap(frequencyTarget,0,3000,0,255));
+    ofSetColor(ofColor::fromHsb(colorVariable, 255, 245));
+    ofDrawBitmapString(brokenText, 10,grabber.getHeight()+20);
 
 
-//
-    
 
-    
-    
-    
 }
 
 //--------------------------------------------------------------
@@ -226,7 +233,6 @@ void ofApp::audioIn(ofSoundBuffer & input){
     // samples are "interleaved"
     int numCounted = 0;
     
-    //lets go through each sample and calculate the root mean square which is a rough way to calculate volume
     for (int i = 0; i < input.getNumFrames(); i++){
         left[i]		= input[i*2]*0.5;
         right[i]	= input[i*2+1]*0.5;
@@ -236,10 +242,8 @@ void ofApp::audioIn(ofSoundBuffer & input){
         numCounted+=2;
     }
     
-    //this is how we get the mean of rms :)
     curVol /= (float)numCounted;
     
-    // this is how we get the root of rms :)
     curVol = sqrt( curVol );
     
     smoothedVol *= 0.93;
@@ -256,13 +260,12 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
         ofScopedLock waveformLock(waveformMutex);
         
         float sampleRate = 44100;
-    //prev^ =44100
         float phaseStep = frequency / sampleRate;
         
         outLine.clear();
     
         float alpha = 0.999;
-        float ySmooth = ofMap(0, -1, 1, 0, ofGetHeight());
+        float ySmooth = ofMap(0, -1.5, 2, 0, ofGetHeight());
     
         for(int i = 0; i < bufferSize * nChannels; i += nChannels)
         {
@@ -274,11 +277,10 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
             
             ySmooth = (1 - alpha) * ofMap(output[i], -1, 1, 0, ofGetHeight()) + (alpha) * ySmooth;
             
-            outLine.addVertex(ofMap(i, 0, bufferSize - 1, 0, ofGetWidth()),
+            outLine.addVertex(ofMap(i, 0, bufferSize-1 , 0, ofGetWidth()),
                               ySmooth);
             
         }
-    
     
 }
 //___
@@ -308,58 +310,155 @@ void ofApp::audioIn(float * input, int bufferSize, int nChannels) {
 }
 //_________
 void ofApp::keyPressed(int key) {
+    typeKey(key);
     
-    if(key=='f'){
-        ofSaveScreen("bingo.jpg");
+    ofSetColor(ofColor::white);
     
-    }
-    if(key == 'z') {
-        frequencyTarget = 261.63; // C
-    } else if(key == 'x') {
-        frequencyTarget = 293.67; // D
-    } else if(key == 'c') {
-        frequencyTarget = 329.63; // E
-    } else if(key == 'v') {
-        frequencyTarget = 349.23; // F
-    } else if(key == 'b') {
-        frequencyTarget = 392.00; // G
-    } else if(key == 'n') {
-        frequencyTarget = 440.00; // A
-    } else if(key == 'm') {
-        frequencyTarget = 493.88; // B
-    } else if(key == 'q') {
-        frequencyTarget = 30;
-    } else if(key == 'w') {
-        frequencyTarget = ofRandom(0,100);
+//Top Row
+    if(key == 'q') {
+    frequencyTarget = 55; //A1
+    } else if(key == 'w') { 
+    frequencyTarget = ofRandom(150);
+    
     } else if(key == 'e') {
-        frequencyTarget = ofRandom(200,2000);
+        frequencyTarget = 65.406; //C2
     } else if(key == 'r') {
-        frequencyTarget = ofRandom(2001,2400);
+        frequencyTarget = 73.416; //D2
     } else if(key == 't') {
-        frequencyTarget = ofRandom(100,200);
+        frequencyTarget = 82.407; //E2
+    } else if(key == 'y') {
+        frequencyTarget = 87.307; //F2
+    } else if(key== 'u') {
+        frequencyTarget= 97.999; //G2
+    } else if( key== 'i') {
+        frequencyTarget= 110.000; //A2
     } else if (key=='o'){
-        for(int o=0;o<ofMap(ofGetHeight(), 0, 1024,200,6000);o++)
-        {   frequencyTarget=ofGetMouseX()*o;
+            for(int o=0;o<ofMap(ofGetHeight(), 0, 1024,200,6000);o++)
+            {   frequencyTarget=ofGetMouseX()*o;}
+    } else if (key=='p'){
+            for(int p=0;p<6000;p++)
+            { int targetP= ofMap(ofGetWidth(), 0, ofGetWidth(), 0, 6000);
+                frequencyTarget=ofRandom(300, targetP);
+            }
+//middle row
+        
+    } else if (key=='a'){
+        frequencyTarget = 246.94; //B3
         }
-    }
-    else if (key=='p'){
-        for(int p=0;p<10000;p++)
-        {
-            int targetP= ofMap(ofGetWidth(), 0, 1024, 0, 10000);
-            frequencyTarget=ofRandom(targetP, targetP*p);
-        }
-    }
-    else if (key=='a'){
-        for(int a=0; a<40; a++)
-        {   frequencyTarget= sin(phase)*a;
-        }
-            
+     else if(key== 's') {
+        frequencyTarget= 261.63; //C4
     
+    } else if(key== 'd') {
+        frequencyTarget= 293.67; //D4
+    }else if(key=='f'){
+        ofSaveScreen("bingo.jpg");
+        frequencyTarget=329.63;   //E4
+    } else if(key== 'g') {
+        frequencyTarget= 349.23; // F4
+    } else if(key== 'h') {
+        frequencyTarget= 392; //G4
+    } else if(key== 'j') {
+        frequencyTarget= 440; //A4
+    } else if(key== 'k') {
+        frequencyTarget= 493; //B4
+    } else if(key== 'l') {
+        frequencyTarget= 523.25; //C5
+    }
+    else if (key ==' ' and soundPlayer.isPlaying())
+    {
+        soundPlayer.stop();
+    }
+        
+    
+//Bottom Row
+    else if(key == 'z') {
+        soundPlayer.loadSound("Ripping the knife apart.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+        // C
+    } else if(key == 'x') {
+        soundPlayer.loadSound("kidpixinstaller.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+    } else if(key == 'c') {
+        soundPlayer.loadSound("mix1.2.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+    } else if(key == 'v') {
+        soundPlayer.loadSound("oopsie.beat1.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+    } else if(key == 'b') {
+        soundPlayer.loadSound("patticake.1.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+    } else if(key == 'n') {
+        soundPlayer.loadSound("chirping.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+    } else if(key == 'm') {
+        soundPlayer.loadSound("musicbox.mp3");
+        soundPlayer.setVolume(frequencyTarget);
+        soundPlayer.play();
+
+    }
     
  
+    }
+//_________BITMAP KEYS____________________
 
-        //SUCCESSFUL PITCH MAP is A ^
+void ofApp::typeKey(int key) {
+    //add charachter
+    
+    
+    if (key >=32 && key <=126) {
+        text.insert(text.begin()+position, key);
+        position++;
     }
     
+    
+    if (key==OF_KEY_RETURN) {
+        text.insert(text.begin()+position, '\n');
+        position++;
+    }
+    
+    if (key==OF_KEY_BACKSPACE) {
+        if (position>0) {
+            text.erase(text.begin()+position-1);
+            --position;
+        }
+    }
+    
+    if (key==OF_KEY_DEL) {
+        if (text.size() > position) {
+            text.erase(text.begin()+position);
+        }
+    }
+    
+    if (key==OF_KEY_LEFT)
+        if (position>0)
+            --position;
+    
+    if (key==OF_KEY_RIGHT)
+        if (position<text.size()+1)
+            ++position;
 
+
+
+    
+    //for multiline:
+    cursorx = cursory = 0;
+    for (int i=0; i<position; ++i) {
+        if (*(text.begin()+i) == '\n') {
+            ++cursory;
+            cursorx = 0;
+        } else {
+            cursorx++;
+        }
+    }
+    
 }
+
+    
+
+
